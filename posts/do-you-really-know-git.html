@@ -1,0 +1,43 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 你真的了解 Git 吗？ · weiwenhao</title><meta name="description" content="你真的了解 Git 吗？ - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">你真的了解 Git 吗？</h1><div class="post-info">2018年4月8日</div><div class="post-content"><p>看了几遍廖雪峰的git教程和阮一峰的git教程之后，觉得自己使用git已经是得心应手了，脑中也构建出了一副关于git操作的图像。</p>
+<blockquote>
+<p>学习一个新东西的时候我总是喜欢把知识形象化出一个图谱在脑中，这样记忆的更加深刻。</p>
+</blockquote>
+<p>但是随着使用的深入，我发现我脑中的图像与git的实际行为存在出入。</p>
+<a id="more"></a>
+<p>稍微进入一下正题。假如你的仓库关联了远程仓库，当我们执行<code>&gt;git status</code>时，可能会有如下提示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"># 您的分支与origin/master 一致</span><br><span class="line">On branch master</span><br><span class="line">Your branch is up-to-date with &apos;origin/master&apos;.</span><br><span class="line">nothing to commit, working tree clean</span><br></pre></td></tr></table></figure>
+<p>当我的队友commit and push 之后我再次执行 <code>&gt;git status</code>，我以为会有如下提示</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"># 你的分支落后于 origin/master一次提交.并且可以快速合并.执行git pull可以进行快速合并</span><br><span class="line">On branch master</span><br><span class="line">Your branch is behind &apos;origin/master&apos; by 1 commits, and can be fast-forwarded.</span><br><span class="line">  (use &quot;git pull&quot; to update your local branch)</span><br><span class="line">nothing to commit, working tree clean</span><br></pre></td></tr></table></figure>
+<p>这是阮一峰大神一篇博客中看到的git操作示意图</p>
+<blockquote>
+<p>网上流传的大部分资料都类似这样</p>
+</blockquote>
+<p><img src="http://asset.eienao.com/15231690297894.jpg" alt></p>
+<p>通过这幅图，我理所当然的认为在队友push之后，我执行git status命令会提示<code>Your branch is behind</code><br>我相信很多人都是这么认为的。</p>
+<p>但实际产生的行为是前者，为什么会出现这样的情况？ 这就是我的问题。<br>再抽象一下这个问题，就是 <strong>git status 是对哪两个仓库进行的比较?</strong></p>
+<p>我们分析一下提示语句 <code>Your branch is behind &#39;origin/master&#39;</code> 。不难看出是 <code>master</code>分支和 <code>origin/master</code>进行的比较</p>
+<p>按照上面的示意图，也就是 Remote(origin/master)和Repository进行了一个比较。但是这与实际情不符。</p>
+<p>如果你有心尝试，你会发现<code>git status</code>是一个断网之后也可以执行的命令。所以不可能是Remote和Repository进行的比较。</p>
+<p>于是经过简单的测试，我脑海中又重新构建出一份git示意图。</p>
+<h3 id="没有远程仓库时，我们常执行的命令有两条"><a href="#没有远程仓库时，我们常执行的命令有两条" class="headerlink" title="没有远程仓库时，我们常执行的命令有两条"></a>没有远程仓库时，我们常执行的命令有两条</h3><p><code>git add</code>和<code>git commit</code> 通过这两条命令绘制出如下图像<br><img src="http://asset.eienao.com/15231725127941.jpg" alt></p>
+<h3 id="当关联远程仓库后，得到如下示意图"><a href="#当关联远程仓库后，得到如下示意图" class="headerlink" title="当关联远程仓库后，得到如下示意图"></a>当关联远程仓库后，得到如下示意图</h3><p><img src="http://asset.eienao.com/15231740463034.jpg" alt></p>
+<p>这张图是我根据git命令的一些行为得到，非权威。和上面阮一峰的示意图相比，本地增加了一个 origin/master。</p>
+<p>再稍微介绍几个命令</p>
+<h3 id="git-pull"><a href="#git-pull" class="headerlink" title="git pull"></a>git pull</h3><p>该命令没有在图上体现，其是一条复合命令</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">git pull = git fetch + git merge origin/master</span><br></pre></td></tr></table></figure>
+<p>git fetch操作将remote同步到本地的origin/master</p>
+<p>git merge origin/master 将 origin的master分支 合并到 仓库的master分支。</p>
+<h3 id="git-push"><a href="#git-push" class="headerlink" title="git push"></a>git push</h3><p>这条命令我没法确切的理解。我的猜测是， git push操作是将local的master push到了local的origin/master<br>git检测到origin变化之后，进行了一个origin到remote的同步操作</p>
+<h3 id="git-status"><a href="#git-status" class="headerlink" title="git status"></a>git status</h3><p>该命令中对比的两个仓库如图示。通过上图就能够解释，为什么 队友提交到remote之后,我执行git status没有落后提示。至此我上文提到的问题得到了解决。</p>
+<h2 id="结"><a href="#结" class="headerlink" title="结"></a>结</h2><p>我认为local和remote之间的行为，用推送和拉取来描述并不那么优雅。这两个词很容易会误解成，remote是一个控制中心。</p>
+<p>实际上local和remote之间进行的只是简单的同步操作，无论是示意图还是我在介绍git fetch和git push都刻意体现出了这种同步。</p>
+<p>在我看来，同步这个字眼更能体现git设计的初衷 —— 分布式版本控制。</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/dijkstra-algorithm-and-correctness-analysis.html" class="prev">PREV</a><a href="/posts/writing-more-descriptive-restful-api.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/do-you-really-know-git.html';
+var disqus_title = '你真的了解 Git 吗？';
+var disqus_url = 'http://beian.miit.gov.cn/posts/do-you-really-know-git.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

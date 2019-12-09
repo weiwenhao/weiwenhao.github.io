@@ -1,0 +1,59 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 简述python异步i/o库 —— asyncio · weiwenhao</title><meta name="description" content="简述python异步i/o库 —— asyncio - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">简述python异步i/o库 —— asyncio</h1><div class="post-info">2017年10月31日</div><div class="post-content"><p>python的asyncio库以协程为基础，event_loop作为协程的驱动和调度模型。该模型是一个单线程的异步模型，类似于node.js。下图我所理解的该模型</p>
+<a id="more"></a>
+<p><img src="https://user-gold-cdn.xitu.io/2017/10/31/23b17e8d92ec76fcefb7abadc0101dd7" alt></p>
+<p>事件循环通过select()来监听是否存在就绪的事件，如果存在就把事件对应的callback添加到一个task list中。然后从task list头部中取出一个task执行。在单线程中不断的注册事件，执行事件，从而实现了我们的event_loop模型。</p>
+<p><strong>event_loop中执行的task并不是函数</strong></p>
+<p>如果<strong>我们把上图当成一个web服务器</strong>，左边的一个task当成一次http请求需要执行的完整任务。如果我们每一次run_task()都执行完一个完整的任务，再去run下一个task。 那这跟普通的串行服务器并没有区别。在并发环境下造成的用户体验非常差。</p>
+<blockquote>
+<p>具体怎么差你可以脑补一下，毕竟我们现在是使用单线程方式实现的web服务器</p>
+</blockquote>
+<p>所以task如果对应一个完整的http请求那么其不可能是一个函数，因为函数需要从头执行到尾占用着整个线程。那你觉得task是什么呢？</p>
+<p>如果你不知道答案的话可以看一看我的另一篇文章 <a href="http://www.weiwenhao.xyz/article/the-yield-and-yield-of-python-the-from" target="_blank" rel="noopener">简述python的yield和yield from</a></p>
+<p>没错，task是一个generator，或者可以叫做可中断的函数。task的代码依旧是从上写到下来处理一个http请求。也就是我们所说的同步的代码组织。</p>
+<p>但是有所不同的是，在task中，我们遇到i/o操作时，我们就把i/o操作交给selector（稍后我们解析一下selector，并且把该i/o操作准备完毕后需要执行的回调也告诉selector。然后我们使用yield保存并中断该函数。</p>
+<p>此时线程的控制权回到event_loop手中。event_loop首先看一下selector中是否存在就绪的数据，存在的话就把对应的回调放到task list的尾部（如图），然后从头部继续run_task()。</p>
+<p>你可能想问上面中断的task什么时候才能继续执行呢？我前一句说过了，event_loop每一次循环都会检测selector中是否存在就绪的i/o操作，如果存在就绪的i/o操作，我们对应就把callback放到task的尾部，当event_loop执行到这个task时。我们就能回到我们刚刚中断的函数继续执行啦，而且此时我们需要的i/o操作得到的数据也已经准备好了。</p>
+<blockquote>
+<p>这种操作如果你站在函数的角度会有种神奇的感觉，在函数眼里，自己需要get遥远服务器的一些数据，于是调动get()，然后瞬间就得到了遥远服务器的数据。没错在函数的眼里就是瞬间得到，这感觉就仿佛是穿越到了未来一样。</p>
+</blockquote>
+<p>你可能又想问，为什么把callback放到task，然后run一下就回到原有的函数执行位置了？</p>
+<p>这我也不知道，我并没有深追asyncio的代码，这对于我来说有些复杂。但如果是我的话，我只要在callback中设置一个变量gen指向我们的generator就行了，然后只要在callback中<code>gen.send(res_data)</code>，我们就能回到中断处继续执行了。如果你有兴趣的话可以自己使用debug来追一下代码。</p>
+<p>不过我更推荐你阅读一下这篇博文 <a href="http://python.jobbole.com/88291/" target="_blank" rel="noopener">深入理解 Python 异步编程(上)</a></p>
+<h3 id="这里还有几个问题。"><a href="#这里还有几个问题。" class="headerlink" title="这里还有几个问题。"></a>这里还有几个问题。</h3><p>比如我们在task中需要执行一个1+2+3+到2000万这样一个操作，这个操作耗时有些长，而且不属于i/o操作，没法交给selector去调度，此时我们需要自己yield，让其他的task能有机会来使用我们唯一的线程。这样就又有一个新的问题。yield后，我们什么时候再次来执行这个被中断的函数呢？</p>
+<p>问题代码示例</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> asyncio</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">print_sum</span><span class="params">()</span>:</span></span><br><span class="line">    sum = <span class="number">0</span></span><br><span class="line">    count = <span class="number">0</span></span><br><span class="line">    <span class="keyword">for</span> a <span class="keyword">in</span> range(<span class="number">20000000</span>):</span><br><span class="line">        sum += a</span><br><span class="line">        count += <span class="number">1</span></span><br><span class="line">        <span class="keyword">if</span> count &gt; <span class="number">1000000</span>:</span><br><span class="line">            count = <span class="number">0</span></span><br><span class="line">            <span class="keyword">yield</span></span><br><span class="line">    print(<span class="string">'1+到2000万的和是&#123;&#125;'</span>.format(sum))</span><br><span class="line"></span><br><span class="line"><span class="meta">@asyncio.coroutine</span></span><br><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">init</span><span class="params">()</span>:</span></span><br><span class="line">    <span class="keyword">yield</span> <span class="keyword">from</span> print_sum()</span><br><span class="line"></span><br><span class="line">loop = asyncio.get_event_loop()</span><br><span class="line">loop.run_until_complete(init())</span><br><span class="line">loop.run_forever()</span><br></pre></td></tr></table></figure>
+<p>我想我们可以这样，把这个中断的task直接加入到task list的尾部，然后继续event_loop，这样让其他task有机会执行，并且处理起来更加的简单。 asyncio库也确实是这样做的。</p>
+<p><em>但是asyncio还提供了更好的做法，我们可以再启动一个线程来执行这种cpu密集型运算</em></p>
+<hr>
+<p>再来看看另外一个问题。如果在一个凌晨三点半，你task list此时是空的，那么你的event_loop怎么运作？继续不停的loop等待新的http请求进来？ no，我们不允许如此浪费cpu的资源。asyncio库也不允许。</p>
+<p>首先看两行event_loop中的代码片段，也就是上图中右上角部分的select(timeout)部分</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">event_list = self._selector.select(timeout)</span><br><span class="line">   self._process_events(event_list)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>补充一点，作为一台web服务器，我们总是需要socket()、bind()、listen()、来创建一个监听描述符sockfd，用来监听到来的http请求，与http请求完成三路握手。然后通过accept()操作来得到一个已连接描述符connectfd。</p>
+<p>这里的两个文件描述符，此时都存在于我们的系统中，其中sockfd继续用来执行监听http请求操作。已经连接了的客户端我们则通过connectfd来与其通信。一般都是一个sockfd对多个connectfd。</p>
+<p>更多的细节推荐阅读  ——《unix网络编程卷一》中的关于socket编程的几章</p>
+</blockquote>
+<p>asyncio对于网络i/o使用了 selector模块，selector模块的底层则是由 epoll()来实现。也就是一个同步的i/o复用系统调用<strong>（你定会惊讶于asyncio的竟然使用了同步i/o来实现？我们在下一节来解读一下epoll函数）</strong></p>
+<p><em>这里你可以去读一下python手册中的selector模块，看看这个模块的作用</em></p>
+<p>epoll()函数有个timeout参数，用来控制该函数是否阻塞，阻塞多久。映射到高层就是我们上面的<code>selector.select(timeout)</code>中的timeout。原来我们的event_loop中的存在一个timeout。这样凌晨三点半我们如何处理event_loop我想你已经心里有数了吧。</p>
+<p>asyncio的实现和你想的差不多。如果task list is not  None那么我们的timeout=0也就是非阻塞的。解释一下就是，我们调用selector.select(timeout = 0 )，该函数会马上返回结果，我们对结果做一个上面讲过的处理，也就是<code>self._process_events(event_list)</code>。然后我们继续run task。</p>
+<p>如果我们的task list is None， 那么我们则把timeout=None。也就是设置成阻塞操作。此时我们的代码或者说线程会阻塞在selector.select(timeout = 0)处，换句话说就是等待该函数的返回。<strong>当然这样做的前提是，你往selector中注册了需要等待的socket描述符。</strong></p>
+<hr>
+<p>还有一些其他的问题，比如异步mysql是如何在asyncio的基础上实现的，这可能需要去阅读aiomysql库了。</p>
+<p>你也许发现，我们一旦使用了event_loop实现单线程异步服务器，我们写的所有代码就都不是我们来控制执行了，代码的执行权全部交给了event_loop，event_loop在适当的时间run task。读过廖雪峰python教程的小伙伴一定看过这句话</p>
+<blockquote>
+<p>这就是异步编程的一个原则：一旦决定使用异步，则系统每一层都必须是异步，“开弓没有回头箭”。  </p>
+</blockquote>
+<p>这就是异步编程。</p>
+<hr>
+<p>你也许对asyncio的作用，或者使用，或者代码实现有着很多的疑问，我也是如此。但是很抱歉，我并不怎么熟悉python，也没有使用asyncio做过项目，只是出于好奇所以我对python的异步i/o进行了一个了解。</p>
+<p>我是一个纸上谈兵的门外汉，到最后我也没能看清asyncio库的具体实现。我接下来的计划中并不打算对asyncio库进行更多的研究，但是我又不甘心这两天对asyncio库的研究付诸东流。所以我留下这篇博文，算是对自己的一个交待！希望下次能够有机会，能够更加了解python和asyncio的前提下，再写一篇深入解析python—asyncio的博文。</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/chrome62-above-to-solve-the-problem-can-not-render-js.html" class="prev">PREV</a><a href="/posts/python-yield-from.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/python-asyncio.html';
+var disqus_title = '简述python异步i/o库 —— asyncio';
+var disqus_url = 'http://beian.miit.gov.cn/posts/python-asyncio.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

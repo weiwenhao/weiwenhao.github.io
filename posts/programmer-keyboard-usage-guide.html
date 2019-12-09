@@ -1,0 +1,82 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 程序员的键盘使用指南 · weiwenhao</title><meta name="description" content="程序员的键盘使用指南 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">程序员的键盘使用指南</h1><div class="post-info">2019年1月24日</div><div class="post-content"><p>工欲善其事,必先利其器. 键盘便是其中的重要的一环,高效的使用键盘可以带来优雅高效的日常使用及编码,甚至能够保护好你的手指.</p>
+<p>于是我便收集了一些较为通用并且不错的键盘使用实践,其中大部分都是参考一些键盘的历史设计,程序员的编码实践,以及一些键盘的使用标准,如键盘使用标准指法等.</p>
+<p>经过这一年的使用,发现很多实践确实会让编码更加的优雅高效,遂分享出来.下面的文章较为简短,只有几条程序员间较为通用的做法,并给出了这么做的理由. </p>
+<a id="more"></a>
+<blockquote>
+<p>一些我个人的键盘使用习惯就不阐述了~</p>
+</blockquote>
+<h4 id="尊重你的操作系统"><a href="#尊重你的操作系统" class="headerlink" title="尊重你的操作系统"></a>尊重你的操作系统</h4><p>如果你使用了mac相关的电脑并外接了非苹果键盘,需要注意一下 command键和option的位置. 更为标准且习惯的方式应该是 alt设置为command键,win设置为option键. </p>
+<p>设置的方式也很简单,点击<strong>键盘 -&gt; 修饰键</strong> 进行设置即可.</p>
+<p><img src="http://asset.eienao.com/20190117095146.png" alt></p>
+<blockquote>
+<p>实际上,我认为mac os的设计相比于windows/linux 在这点上更加合理</p>
+</blockquote>
+<h4 id="抛弃Caps键"><a href="#抛弃Caps键" class="headerlink" title="抛弃Caps键"></a>抛弃Caps键</h4><p>caps既大小写锁定键,相信很多人已经很少去按这个键了,如果你还对它恋恋不舍,那么你需要练习使用shift键来进行大小写的转换. </p>
+<blockquote>
+<p>推荐一个练习打字的网站 <a href="https://www.typingclub.com" target="_blank" rel="noopener">https://www.typingclub.com</a></p>
+<p>如果整个单词需要大写的话,我通常会先键入小写,然后使用ide的大小写转换功能对整个单词进行转换(适用于常量的键入), 对于vim只要<code>gUaw</code>即可将整个单词切换为大写,对于jetbrains系列ide,选中单词后按住<code>command + shift + u</code> 即可进行大小写的转换</p>
+<p>在window/linux上 command 即 ctrl键</p>
+</blockquote>
+<h4 id="使用两侧的Shift键"><a href="#使用两侧的Shift键" class="headerlink" title="使用两侧的Shift键"></a>使用两侧的Shift键</h4><p>考虑到你可能不会点开上面的打字网站,我着重介绍一下shift键. 稍微注意一下你就会发现 shift键的使用频率非常的高, 尤其是php程序员满屏的$,如果你还使用shift切换大小写,那么你的左手小指的负担其实已经非常大了</p>
+<p>正确的做法是</p>
+<p>键入<code>A</code>时, 标准指法的使用应该是<strong>右手小指按住shift + 左手小指按住字母A</strong>.  </p>
+<p>键入<code>$</code>时, 应该是<strong>右手小指按住shift + 左手食指按住数字4</strong></p>
+<p>键入<code>(</code>时, 应该是<strong>左手小指按住shift + 左手食指按住数字9</strong></p>
+<p>这里的基本原则是,如果你需要同时按住两个按键时,尽量让这两个按键分摊到你的两只手上</p>
+<blockquote>
+<p>但是如 ctrl + c    ctrl + d 这样的按键,还是无法分摊到两只手上进行操作</p>
+</blockquote>
+<h4 id="映射Ctrl键"><a href="#映射Ctrl键" class="headerlink" title="映射Ctrl键"></a>映射Ctrl键</h4><p>当不在使用caps键键入大写字母时,就空出了一个非常宝贵的按键, 因为caps对应的这个键位对小拇指实在是太友好了.</p>
+<p>接下来要做的就是把日常生活中程序员非常非常常用但却非常难于敲击的键ctrl键映射到caps键.这一步对于非常依赖ctrl的windows/linux用户尤为重要. 当然对于mac用户也非常重要,即使在command键已经代替了ctrl的大部分操作的情况下.</p>
+<blockquote>
+<p>crtl + [ 是我日常使用最为频繁的按键</p>
+</blockquote>
+<p>对于mac用户这很容易操作,你可以参考上面那张图片中的按键映射, 对于windows/linux用户,你需要下载专业的按键映射软件</p>
+<h4 id="映射Esc键"><a href="#映射Esc键" class="headerlink" title="映射Esc键"></a>映射Esc键</h4><p>esc也是较为常用的一个按键,尤其是用在一些弹出层的关闭. vim中退出insert/visual模式也需要esc键.但是esc实在是太太太遥远了.</p>
+<p>这里有两个映射方案</p>
+<p>对于非vim用户,可以选择将键盘左下角空出来的Ctrl按键映射成Esc. 如果你的键盘按键足够高,可以选择使用掌心来敲击该按键. <em>对于我来说,这种映射使用最多的情况是退出视频的全屏模式</em></p>
+<blockquote>
+<p>vim用户请千万不要使用上述的方式退出insert/visual模式</p>
+</blockquote>
+<p>对于vim模式,推荐使用<code>ctrl + [</code> 代替Esc键,在vim编辑器中,这是默认映射.当然我也喜欢自己在系统层面做这样一个映射,让我在任何地方都能够使用<code>ctrl + [</code>来退出一些奇奇怪怪的弹出层,比如Alfred</p>
+<p>下面是我常用的一些映射</p>
+<p><img src="http://asset.eienao.com/20190124103742.png" alt></p>
+<p><img src="http://asset.eienao.com/20190124135715.png" alt></p>
+<p>上面的键盘映射软件是 <a href="https://pqrs.org/osx/karabiner/" target="_blank" rel="noopener">Karabiner for mac</a>,由于我的键盘的特殊性,所以做了一些特别的映射,下面有介绍我使用的键盘</p>
+<h4 id="抛弃↑↓←→"><a href="#抛弃↑↓←→" class="headerlink" title="抛弃↑↓←→"></a>抛弃↑↓←→</h4><p>上下左右这几个键依旧非常的遥远,会让我们的手指离开主键位区. 这里有两种方法来避免使用它们,让你更有style的来工作与日常</p>
+<p>emacs的解决方式(通用解决方式). </p>
+<p><code>ctrl + b</code> = ←</p>
+<p><code>ctrl + f</code> = →</p>
+<p><code>ctrl + n</code> = ↓</p>
+<p><code>ctrl + p</code> = ↑</p>
+<p>说上面的为通用解决方案是因为上面的指法只要是在有文本键入的地方都适用的,包含iterm2,浏览器,ide中等等.基本上属于操作系统级的指法</p>
+<p>更多的类似指法还有</p>
+<p><code>ctrl + a</code> 回到行首</p>
+<p><code>ctrl + e</code> 去到行尾</p>
+<p><code>ctrl + w</code> 回删一个单词</p>
+<p><code>ctrl + m</code>  回车</p>
+<p>vim的解决方式,这个就不多叙述了,适用群体和软件比较特殊,不过我还是推荐 phpstorm + vim插件 / vscode + vim插件的开发方式,在简单的层面使用vim也会带来很多的便利</p>
+<h4 id="抛弃数字小键盘"><a href="#抛弃数字小键盘" class="headerlink" title="抛弃数字小键盘"></a>抛弃数字小键盘</h4><p>使用主键位区的数字键</p>
+<p><img src="http://asset.eienao.com/20190124104710.png" alt></p>
+<h4 id="选用一把合适的键盘"><a href="#选用一把合适的键盘" class="headerlink" title="选用一把合适的键盘"></a>选用一把合适的键盘</h4><p>即使ctrl在一个这么顺手的位置,但是对于程序员来说左手小指的压力还是非常大的,尤其是左侧shift和ctrl的使用,我便是由于小拇指疼痛,便购入了一把<strong>樱桃红轴</strong>的机械键盘,其对小拇指的减负有着不错的作用</p>
+<p>下面这款是我编码使用的键盘</p>
+<p><img src="http://asset.eienao.com/20190117105613.png" alt></p>
+<p>算是比较便宜精致的樱桃轴键盘了,基本上没有多余的键位</p>
+<p>我没有体验过静电容的键盘, 但是预算充足的情况下, hhkb的那款感觉很酷,值得尝试</p>
+<blockquote>
+<p>tip: 如果你要购入和我一样的键盘,请一定要看准<strong>樱桃红轴</strong>,这款键盘还有其他品牌的轴体</p>
+</blockquote>
+<h4 id="尝试学习vim"><a href="#尝试学习vim" class="headerlink" title="尝试学习vim"></a>尝试学习vim</h4><p>理由网上很多我就不赘述了, 但是写两行代码就要动一下鼠标或者手指离开主键盘区,感觉自己就像是个瘸子一样,很不酷.😂</p>
+<h4 id="补充"><a href="#补充" class="headerlink" title="补充"></a>补充</h4><p><em>推荐使用右手拇指来敲击空格,从而充分利用该手指. 当然更加推荐的做法是双手拇指轮流敲击空格(我还做不到). 程序员对空格的需求还是蛮大的</em></p>
+<p><em>不要总是展开ide左侧的tree文件导航,实际上大部分时间你都用不到它,记住展开与关闭的快捷键,编码时把它关闭(jetbrains系列ide的快捷键是command + 1)</em></p>
+<p><em>编码时推荐使用serach Everywhere + 缓冲区(jetbrains系列ide中 command + e)  + 函数列表(jetbrains系列ide中 command + f12)来进行跳转与控制</em></p>
+<p><em>实际上一把HHKB键盘包含上述80%的操作,毕竟是专门为程序员打造的键盘.但是并不是每个人都舍得购入一把HHKB,所以上面的一些操作方法,使你依旧能够在普通键盘上使用</em></p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/accelerate-your-api-development-with-tree-ql.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/programmer-keyboard-usage-guide.html';
+var disqus_title = '程序员的键盘使用指南';
+var disqus_url = 'http://beian.miit.gov.cn/posts/programmer-keyboard-usage-guide.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

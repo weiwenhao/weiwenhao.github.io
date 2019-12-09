@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Vue 工程化最佳实践 · weiwenhao</title><meta name="description" content="Vue 工程化最佳实践 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">Vue 工程化最佳实践</h1><div class="post-info">2018年12月14日</div><div class="post-content"><a id="more"></a>
+<h3 id="目录结构"><a href="#目录结构" class="headerlink" title="目录结构"></a>目录结构</h3><p>总览</p>
+<p><img src="http://asset.eienao.com/20181214113352.png" alt></p>
+<ul>
+<li><p>api目录用于存放 api请求,文件名与模型名称基本一致,文件名使用小驼峰, 方法名称与后端restful控制器一致.</p>
+<ul>
+<li><img src="http://asset.eienao.com/20181214113459.png" alt></li>
+</ul>
+</li>
+<li><p>enums 目录存放 常量, 与后端的常量目录对应</p>
+<ul>
+<li><img src="http://asset.eienao.com/20181214113531.png" alt></li>
+</ul>
+</li>
+<li><p>icons目录用于存放图标, element-ui提供的图标实在是太少啦.所以我通常会使用 阿里的iconfont</p>
+</li>
+<li>lang目录存放多语言</li>
+<li>layouts目录存放布局<ul>
+<li><img src="http://asset.eienao.com/20181214114528.png" alt></li>
+<li>上面展示的是一个后台系统, empty为一个空布局.用于登录页面, 其他页面则使用default布局. 布局不需要过多介绍,写过laravel blade都很熟悉了.这里的布局需要和vue-router配合使用</li>
+</ul>
+</li>
+<li>mixins 类似php的trait, 但是它更强大, 完整贴合vue组件的生命周期</li>
+<li><p>plugins 目录存放插件配置, 比如 axios,vue-lazy等 (这是从nuxt中学到的概念)</p>
+<ul>
+<li><img src="http://asset.eienao.com/20181214114547.png" alt></li>
+</ul>
+</li>
+<li><p>router目录存放与 前端路由相关的配置,总体来说类似于laravel的api层</p>
+</li>
+<li><p>store 目录即vuex的目录, 类似于前端的model. 其文件与后端model相匹配,采用小驼峰命名</p>
+<ul>
+<li><img src="http://asset.eienao.com/20181214114609.png" alt></li>
+</ul>
+</li>
+<li><p>utils 目录存放辅助函数</p>
+</li>
+<li>views 为业务视图层,相信后端同学也很熟悉.其由vue-router直接调度</li>
+<li>main.js 为app的入口, 类似于后端的index.php</li>
+<li>components 目录, 存放组件.通常是一些可复用的组件会单独存放在该目录</li>
+</ul>
+<p>总体来说, 已后端的mvc思想来看现代的前端项目是非常的自然的. 后端的model对应前端的store, 后端的router对应前端的router,后端的controller + views 对应前端的views.</p>
+<h3 id="基础规范"><a href="#基础规范" class="headerlink" title="基础规范"></a>基础规范</h3><p> 就目前来说 vue项目很少用到 class, 因此 .js文件通常都是一个 module, 所以文件名使用小驼峰的形式命名. 如果有类文件,则类文件使用大驼峰的形式命名.</p>
+<p>.vue文件 可以使用 中划线和大驼峰两种命名方式, 参考了element/iview/nuxt项目之后, 推荐统一使用中划线命名.</p>
+<p>所有的文件夹名称统一使用中划线命名</p>
+<blockquote>
+<p>引入vue组件时文件时需要转换成大驼峰<code>import &#39;TestTest&#39; from &#39;@/components/test-test&#39;</code></p>
+<p>在template 使用时依旧使用中划线</p>
+<p><code>&lt;test-test /&gt;</code></p>
+</blockquote>
+<p>其他规范如变量命名和使用规范 使用eslint的standard 即可很好的解决.</p>
+<p>前端存在很多的事件 如change/input/upload/sumit等等,相应的处理推荐使用 handle + 事件名称, 如<code>handleChange</code></p>
+<h3 id="生命周期"><a href="#生命周期" class="headerlink" title="生命周期"></a>生命周期</h3><p>vue-router 解析当前用户键入的 url, 然后匹配合适的视图组件加载. </p>
+<p>着重介绍一下 我对views目录下的视图组件的理解,已修改地址为例</p>
+<p><img src="http://asset.eienao.com/20181214114635.png" alt></p>
+<p>script部分既控制器部分,其请求数据, 然后注入到view 中, 就像后端的mvc一样.只不过vue将 vc 其写入到了一个文件中.这样理解对于写过后端的同学显得更加的自然</p>
+<h5 id="控制器如何获取数据"><a href="#控制器如何获取数据" class="headerlink" title="控制器如何获取数据?"></a>控制器如何获取数据?</h5><p>在过去的vue项目中,我们可能会见到这样的写法</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ... views/address/edit.vue</span></span><br><span class="line">created () &#123;</span><br><span class="line">    axios.get(<span class="string">'/addresses/1'</span>)</span><br><span class="line">        .then(<span class="function">(<span class="params">response</span>) =&gt;</span> &#123;</span><br><span class="line">             <span class="keyword">this</span>.list = resposne.data              </span><br><span class="line">        &#125;)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//...</span></span><br></pre></td></tr></table></figure>
+<p>这种写法无异于后端在控制器中写sql语句一样,在工程化实践中不推荐这么做,后端通过model来获取数据会更加的优雅自然.在vue项目中, model既vuex,因此推荐这么做</p>
+<blockquote>
+<p>如果你对我说的东西一脸懵逼, 那么你可以看一下 vuex的文档. 我现在做的就是用后端熟悉的概念,来描述前端项目的最佳实践</p>
+</blockquote>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ... views/address/edit.vue 控制器+视图</span></span><br><span class="line">computed: &#123;</span><br><span class="line">    address: <span class="function"><span class="params">()</span> =&gt;</span> <span class="keyword">this</span>.$store.address.itemBy[<span class="number">1</span>] <span class="comment">// 从store模型中取出我们想要数据</span></span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ... store/modules/address.js  数据源</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">    state: &#123;</span><br><span class="line">        itemBy: &#123;&#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    actions: &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;,</span><br><span class="line">    mutations: &#123;</span><br><span class="line">        ...</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+<h5 id="store中的数据从哪里来"><a href="#store中的数据从哪里来" class="headerlink" title="store中的数据从哪里来?"></a>store中的数据从哪里来?</h5><p>数据当然是从后端的数据库中获取,我们不能让前端直接访问我们的数据库,因此我们会提供api让前端访问.store中存在一个发起api请求的地方,既 action.</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ... store/modules/address.js  模型</span></span><br><span class="line"><span class="keyword">export</span> <span class="keyword">default</span> &#123;</span><br><span class="line">    state: &#123;</span><br><span class="line">        itemBy: &#123;&#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    actions: &#123;</span><br><span class="line">        <span class="keyword">async</span> fetchItem(&#123; commit, state &#125;, &#123; id &#125;) &#123;</span><br><span class="line">             <span class="comment">// 对axios和api进行了简单的封装,使api请求更加语义化</span></span><br><span class="line">            cosnt &#123; data &#125; = <span class="keyword">await</span> address.show(id)</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// action只能通过提交commit来修改state,具体原因请查看vuex文档 (其实我也忘了为啥 (╯﹏╰))</span></span><br><span class="line">            commit(<span class="string">'SET_ITEM'</span>, data) </span><br><span class="line">        &#125;</span><br><span class="line">    &#125;,</span><br><span class="line">    mutations: &#123;</span><br><span class="line">        SET_ITEM: <span class="function">(<span class="params">state, item</span>) =&gt;</span> &#123;</span><br><span class="line">            state.itemBy[item.id] = item</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// ...</span></span><br></pre></td></tr></table></figure>
+<p>这样我们的模型中就有数据啦</p>
+<h5 id="什么时候去调用fetchItem去请求后端呢"><a href="#什么时候去调用fetchItem去请求后端呢" class="headerlink" title="什么时候去调用fetchItem去请求后端呢?"></a>什么时候去调用<code>fetchItem</code>去请求后端呢?</h5><blockquote>
+<p><a href="https://router.vuejs.org/zh/guide/advanced/data-fetching.html" target="_blank" rel="noopener">https://router.vuejs.org/zh/guide/advanced/data-fetching.html</a> vue-router文档的解答</p>
+</blockquote>
+<p>这里不推荐在vue原始的生命周期中去调用初始化请求,可能会带来 数据还没有获取到,template却已经被渲染.会造成一些数据不存在的异常,推荐在vue-router的生命周期中去请求数据</p>
+<figure class="highlight javascript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// ... views/address/edit.vue</span></span><br><span class="line"><span class="keyword">async</span> beforeRouteEnter (to, <span class="keyword">from</span>, next) &#123;</span><br><span class="line">    <span class="comment">// 等待模型数据加载完毕,才继续进行vue组件的生命周期</span></span><br><span class="line">    <span class="keyword">await</span> store.dispatch(<span class="string">'fetchItem'</span>, to.params.id) </span><br><span class="line">    </span><br><span class="line">    next()</span><br><span class="line">&#125;</span><br><span class="line">created () &#123;</span><br><span class="line">    <span class="comment">// 不推荐在这里调用 fetchItem</span></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">//...</span></span><br></pre></td></tr></table></figure>
+<p>到这里你可能发现,这和你平时写的vue有些不一样, 没有类似 <code>this.data = response.data</code> 这种操作. 类似这种操作其实类似赋值操作,或者称为副作用,其引入了时间的概念,使数据的管理变的复杂. 直观的体现就是我们可能会有这种多余的 <code>if(data)</code>判断.</p>
+<p>当然副作用是难以避免的,但是我们可以统一的管理他们.类似上面的代码就是一套我觉得还不错的方法.从view的角度看, 数据是固有存在存在的,其不需要关心是否是否已经被加载完毕,且store中的不可被view修改,既数据只能单向流动</p>
+<p>在store中统一管理数据的另外一个好处就是方便持久化</p>
+<h5 id="view层如何修改数据源"><a href="#view层如何修改数据源" class="headerlink" title="view层如何修改数据源?"></a>view层如何修改数据源?</h5><p>上面的描述实际上表达了一种 发布与订阅的模式, 从store到view的数据流是严格单向数据流动.</p>
+<p>view层不允许直接修改store中的数据,但是view层却可以通过发送action来影响数据源. </p>
+<p>比如初始化时的dispatch的action,各种event触发的dispatch. 当数据源发生改变时,作为订阅者的view层会非常自然的重新渲染.</p>
+<blockquote>
+<p>这种设计和父子组件类似,vue中子组件不允许直接修改父组件props到子组件的数据,只能通过向父组件emit event. 在view和store之间,这种设计依然合理.</p>
+<p>这也意味着应用中所有的数据都遵循相同的生命周期，这样可以让应用变得更加可预测且容易理解。</p>
+</blockquote>
+<p><img src="http://asset.eienao.com/20181214114653.png" alt></p>
+<p>上面的图很好的阐述了这种开发模式.  引自 <a href="https://github.com/sorrycc/blog/issues/1" target="_blank" rel="noopener">https://github.com/sorrycc/blog/issues/1</a></p>
+<h3 id="view层再深入"><a href="#view层再深入" class="headerlink" title="view层再深入"></a>view层再深入</h3><p>view层的script部分,除了充当了传统的controller,起到初始化的作用外,实际上还做了更多的事情. </p>
+<p>先从data部分说起,在view层会有一些状态需要记录, 如 菜单的展开或收起, 弹窗的弹出与关闭. 对于这样的状态的管理,一种做法就是将存储在data部分.</p>
+<blockquote>
+<p>也有人将所有的状态 也放在 store中的state维护. 既state分为状态和数据 两种类型.</p>
+</blockquote>
+<p>view层的script更重要的部分,是其到了一个交互反馈的作用, 既类似下面的代码</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">&lt;template&gt;</span><br><span class="line">	&lt;button @click=&quot;handleSubmit&quot;/&gt;</span><br><span class="line">&lt;/template&gt;</span><br><span class="line"></span><br><span class="line">&lt;script&gt;</span><br><span class="line">    export default &#123;</span><br><span class="line">        data: &#123;&#125;,</span><br><span class="line">        methods: &#123;</span><br><span class="line">            handleSubmit() &#123;</span><br><span class="line">                </span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&lt;/script&gt;</span><br></pre></td></tr></table></figure>
+<p>关于css部分,由于个人不了解css,也不清楚css的业界规范及在vue上的最佳实践,因此不做过多介绍.</p>
+<h3 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h3><p>在前面的介绍中, store和api 目录是和数据挂钩的,当数据库定下来,这一部分也就定了下来.</p>
+<p> views/components 和业务(ui)挂钩,需要等设计稿确定后,这一部分才能确定下来.</p>
+<blockquote>
+<p>PS设计稿的图层通常就是组件的拆分规范 ?<br>使用vuex存储数据的另一个好处就是可以无缝的切换到ssr框架nuxt</p>
+</blockquote>
+<p>views和store之间是一种订阅和发布的模式.</p>
+<h4 id="两个问题"><a href="#两个问题" class="headerlink" title="两个问题"></a>两个问题</h4><p><strong>store中的state应该如何组织?</strong> 对于api请求,我们经常会看到这样的json数据</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line">// post</span><br><span class="line">&#123;</span><br><span class="line">    id: 1,</span><br><span class="line">    title: xxxx,</span><br><span class="line">    content: xxxx,</span><br><span class="line">    user: &#123;</span><br><span class="line">        id: xxx,</span><br><span class="line">        nickname: xxx,</span><br><span class="line">        avatar: xxx,</span><br><span class="line">    &#125;,</span><br><span class="line">    comments: [</span><br><span class="line">        &#123;</span><br><span class="line">            id: xxx,</span><br><span class="line">            user_id: xxx,</span><br><span class="line">            content: xxx,</span><br><span class="line">            user: &#123;</span><br><span class="line">                // ...</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;,</span><br><span class="line">        &#123;</span><br><span class="line">            //....</span><br><span class="line">        &#125;</span><br><span class="line">    ]</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>上面的数据结构复杂,嵌套深入.  如果我们将他们一股脑的存在 post的state中,会造成数据过于集中,冗余. comments无法独立化更新等等问题.  使得前端 scheme/orm,数据组织的规范化变的迫切需要</p>
+<p>但是vue在这方面没有很好的规范和最佳实践. react在这方面比较不错的实践 <a href="https://github.com/paularmstrong/normalizr" target="_blank" rel="noopener">https://github.com/paularmstrong/normalizr</a></p>
+<p><strong>如何设计良好规范的compoents?</strong> </p>
+<p>组件的设计在业务层非常的重要,在下一篇我会介绍一下我总结出的一些实践</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/design-of-order-system-in-e-commerce.html" class="prev">PREV</a><a href="/posts/tips-for-using-json-fields-in-mysql.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/vue-engineering-best-practices.html';
+var disqus_title = 'Vue 工程化最佳实践';
+var disqus_url = 'http://beian.miit.gov.cn/posts/vue-engineering-best-practices.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

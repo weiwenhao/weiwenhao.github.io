@@ -1,0 +1,44 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> nuxt——服务端渲染可选方案 · weiwenhao</title><meta name="description" content="nuxt——服务端渲染可选方案 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">nuxt——服务端渲染可选方案</h1><div class="post-info">2018年1月27日</div><div class="post-content"><a id="more"></a>
+<p>团队在最近的一次开发中前端技术栈从html + css + jquery转向vue全家桶。后端从php + Blade + jquery转向vue全家桶。</p>
+<p>在转向前后端分离的开发模式中遇到了一些问题。</p>
+<ul>
+<li>首屏加载缓慢</li>
+<li>seo问题</li>
+<li>前后端分离中的异步请求数量过多等问题</li>
+</ul>
+<p>为了解决上面的尤其是第二个问题。团队决定使用服务端渲染。</p>
+<h2 id="服务端渲染"><a href="#服务端渲染" class="headerlink" title="服务端渲染"></a>服务端渲染</h2><p>服务端渲染可以很好的解决打包文件过大导致的首次加载白屏问题，并且页面打开速度相比于js渲染界面快很多。</p>
+<p>就像过去用php的模板引擎渲染html界面也是一种服务端渲染方式，但并不适用于大JavaScript时代了。</p>
+<p>我最早看到服务端渲染是在淘宝博客的前后端分离的思考与实践中，他们提出了一个中途岛的概念。</p>
+<blockquote>
+<p>其实回头想想，在我们把渲染的工作从 服务端抽出来到 浏览器端（JS）的时候，我们的目的只是明确的前后端职责划分，并不是非浏览器渲染不可。</p>
+<p>只是因为在传统的开发模式中，出了服务器就到了浏览器，所以前端的工作内容只能被限制在浏览器端。</p>
+<p>也因此很多人认定了 后端 = 服务端 前端 = 浏览器端<br>                     ——前后端分离的思考与实践</p>
+</blockquote>
+<p><img src="https://gw.alicdn.com/tfs/TB1WEF2QpXXXXXvaXXXXXXXXXXX-572-145.png" alt="中途岛的概念"></p>
+<p>原文链接 <a href="http://taobaofed.org/blog/2014/04/09/practice-of-separation-of-front-end-from-back-end-2/" target="_blank" rel="noopener">前后端分离的思考与实践（二）</a></p>
+<hr>
+<p>前后端分离是架构上的分离，并不是人员上的分离，php程序员写写现代js对自身的成长也是有很大帮助的。</p>
+<p>其实我想说的是php并不是不可替代的😆，node.js什么嗒也是可以很好的完成web开发的</p>
+<p>由于使用了vue全家桶，且对node.js也不是很熟悉，所以选择了nuxt.js服务端渲染框架 （主要还是用起来简单，学起来快）</p>
+<h2 id="nuxt"><a href="#nuxt" class="headerlink" title="nuxt"></a>nuxt</h2><p>nuxt中文文档 <a href="https://zh.nuxtjs.org/guide" target="_blank" rel="noopener">https://zh.nuxtjs.org/guide</a></p>
+<p><img src="https://zh.nuxtjs.org/nuxt-schema.png" alt></p>
+<p>在使用nuxt的过程中，我们对一个界面的请求方式有两种。</p>
+<ul>
+<li>从浏览器地址栏键入</li>
+<li>通过类似 router-link的a标签点击跳转</li>
+</ul>
+<p>当我们从浏览器的地址栏中键入一条请求时，请求被交给了nuxt服务器（或者nginx→nuxt）。<br>nuxt服务器解析vue组件（中的asyncData方法），并将数据绑定到html。然后再返回给浏览器。</p>
+<p>当我们通过点击router-link跳转时整个应用依旧是无刷新的单页应用。且会在window.history中键入记录。</p>
+<p>因此对于任意一个vue组件其被访问的情况分为两种，浏览器端渲染和nuxt服务器端渲染。</p>
+<p>了解nuxt最快的方式就是了解nuxt的生命周期，了解nuxt生命周期最快的方式自然是conlose.log()了。<br>并不具体的细节请参考手册。</p>
+<h2 id="后记"><a href="#后记" class="headerlink" title="后记"></a>后记</h2><p>nuxt项目还比较年轻，所以存在一些莫名奇妙的bug（更多的bug主要是对js不熟悉所致）。<br>但是vue官方推荐，且有着强大的社区支撑，所以还是有着不错的维护效率。</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/a-deep-understanding-of-the-tcp-protocol-1.html" class="prev">PREV</a><a href="/posts/a-brief-introduction-to-the-realization-of-container-reflection-mechanism.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/nuxt-server-side-rendering-options.html';
+var disqus_title = 'nuxt——服务端渲染可选方案';
+var disqus_url = 'http://beian.miit.gov.cn/posts/nuxt-server-side-rendering-options.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

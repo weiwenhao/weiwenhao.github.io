@@ -1,0 +1,42 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 深入理解TCP协议（一） · weiwenhao</title><meta name="description" content="深入理解TCP协议（一） - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">深入理解TCP协议（一）</h1><div class="post-info">2018年2月9日</div><div class="post-content"><a id="more"></a>
+<h2 id="三路握手"><a href="#三路握手" class="headerlink" title="三路握手"></a>三路握手</h2><ol>
+<li><p>服务器端通过调用 socket、bind和1isten这3个函数准备好接受外来的连接。称之为被动打开（passive open）</p>
+</li>
+<li><p>客户端通过调用 connect发起主动打开( active open)。该调用使客户端发送一个SYN(同步)分节给服务器，SYN中包含客户将在(待建立的)连接中发送的数据的初始序列号。<strong>通常SYN分节不携带数据</strong>， 其所在IP数据报只含有一个IP首部、一个TCP首部及可能有的TCP选项。</p>
+</li>
+<li>服务器必须确认(ACK)客户的SYN,同时自己也得发送一个SYN分节，它含有服务器将在同一连接中发送的数据的初始序列号。服务器在单个分节中发送SYN和对客户SYN的ACK(确认)。</li>
+<li>客户必须确认服务器的SYN。既发送一个确认SYN的ACK。</li>
+</ol>
+<p>这种交换至少需要3个分组,因此称之为TCP的三路握手(thre-way handshake)。<br><img src="http://asset.eienao.com/15175486060759.jpg" alt></p>
+<p>可以看到服务端调用accept()函数后，一直处于阻塞状态。直到三路握手完成后，accept函数才返回。然后再阻塞于read状态</p>
+<h2 id="TCP状态转换图"><a href="#TCP状态转换图" class="headerlink" title="TCP状态转换图"></a>TCP状态转换图</h2><p>TCP为一个连接定义了11种状态</p>
+<p><img src="http://asset.eienao.com/15179303680473.jpg" alt></p>
+<p>其中ESTABLISHED为（客户端或服务端）完成三路握手后的状态，这个最终状态在数据发送期间一直保持。</p>
+<p>主动调用close一方经历了TIME_WAIT状态，  在TIME_WAIT状态下会持续 2MSL (时间单位)。<br><strong>MSL: maximum segment lifetime</strong><br>实现TCP时必须必须为MSL选择一个值，建议在30秒~2分钟。<br>MSL是任何IP数据报能够在因特网中存活的最长时间。</p>
+<p>TIME_WAIT状态有两个存在的理由：<br>(1)可靠地实现TCP全双工连接的终止<br>(2)允许老的重复分节在网络中消逝，因为TCP协议规定在TIME_WAIT状态下的一端不允许创建新的TCP连接。从而保证旧连接的任何分节都不会发送到新的连接中去（分节在因特网中的最长存活时间小于TIME_WAIT持续的时间）。</p>
+<p><img src="http://asset.eienao.com/15179304017422.jpg" alt></p>
+<p>上图服务器对客户的请求的确认是伴随其应答发送的,这种做法称为 piggybacking，<br>它通常在服务器请求并产生的应答的时间少于200ms时发生。</p>
+<h2 id="并发服务器"><a href="#并发服务器" class="headerlink" title="并发服务器"></a>并发服务器</h2><p><img src="http://asset.eienao.com/15181013775313.jpg" alt><br>如图为一个多进程模型的并发服务器</p>
+<p>我们发现子进程1和子进程2的connect_socket甚至是listen_socket都使用了服务器端的21端口。</p>
+<p>当客户端请求12.106.32.254:21端口时，tcp协议应该将该请求交给三个socket中的哪一个呢？</p>
+<p>首先通过上图可以确定的是无法仅仅通过目的端口将到来的请求交给对应的socket。</p>
+<p><strong>书（unix网络编程卷3）中的解释是：</strong>  TCP协议必须查看<strong>套接字对</strong>的所有四个元素，才能确定由哪个socket接受到达的客户端请求。</p>
+<blockquote>
+<p>对于tcp请求，我们可以在分节的tcp标头中得到这四个元素（请求双方的id和端口号）<br><img src="http://asset.eienao.com/15181892735181.jpg" alt></p>
+</blockquote>
+<p><strong>下面是我根据书中的解释做出的臆想</strong></p>
+<p>对于一台并发服务器来说，一个简单的算法是：对于一个到来的分节。首先查看其目的端口(对于单ip服务器来说，再查看分节的目的ip就有些多此一举了)。</p>
+<p>然后检索所有监听了该目的端口的socket。假如只检索到一个，那么直接将该分节交给该socket即可。</p>
+<p>当检索出了多个socket时 (上图中多个已连接socket的情况)，我们可以根据客户端的ip与端口号进行匹配，当然这一次是客户端的ip与端口都需要参与匹配。<br>优先匹配具有精确客户端地址的socket 如服务器的子进程2的socket中保存的socket pair为 <code>{12.106.32.254:21,206.168.112.219:1501}</code><br>其精确的标识了请求端的ip地址和端口号 206.168.112.219:1501<br>其次再匹配通配的socket。如监听socket</p>
+<p>当然要做到上面匹配需要我们服务器端的socket中保存了4个元素。实际上也确实如此</p>
+<p>socket中包含的一个inet_sock的结构体如下。其中包含确定一个tcp连接所需的4个元素</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">struct inet_sock   </span><br><span class="line">&#123;   </span><br><span class="line">    struct sock sk;   </span><br><span class="line">#if defined(CONFIG_IPV6) || defined(CONFIG_IPV6_MODULE)   </span><br><span class="line">    struct ipv6_pinfo   *pinet6;   </span><br><span class="line">#endif   </span><br><span class="line">    __u32           daddr;          //IPv4的目的地址。   </span><br><span class="line">    __u32           rcv_saddr;      //IPv4的本地接收地址。   </span><br><span class="line">    __u16           dport;          //目的端口。   </span><br><span class="line">    __u16           num;            //本地端口（主机字节序）。  </span><br><span class="line">    </span><br><span class="line">    …………      </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/writing-more-descriptive-restful-api.html" class="prev">PREV</a><a href="/posts/nuxt-server-side-rendering-options.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/a-deep-understanding-of-the-tcp-protocol-1.html';
+var disqus_title = '深入理解TCP协议（一）';
+var disqus_url = 'http://beian.miit.gov.cn/posts/a-deep-understanding-of-the-tcp-protocol-1.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

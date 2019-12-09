@@ -1,0 +1,50 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> mysql —— InnoDB行级锁机制 · weiwenhao</title><meta name="description" content="mysql —— InnoDB行级锁机制 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">mysql —— InnoDB行级锁机制</h1><div class="post-info">2017年5月15日</div><div class="post-content"><blockquote>
+<ul>
+<li>InnoDB与MyISAM的最大不同有两点：一是支持事务（TRANSACTION）；二是采用了行级锁。行级锁与表级锁本来就有许多不同之处，另外，事务的引入也带来了一些新问题。下面我们先介绍一点背景知识，然后详细讨论InnoDB的锁问题。<a id="more"></a>
+</li>
+</ul>
+</blockquote>
+<h2 id="并发事务处理带来的问题"><a href="#并发事务处理带来的问题" class="headerlink" title="并发事务处理带来的问题"></a>并发事务处理带来的问题</h2><hr>
+<h4 id="更新丢失（Lost-Update）"><a href="#更新丢失（Lost-Update）" class="headerlink" title="更新丢失（Lost Update）"></a>更新丢失（Lost Update）</h4><p>当两个或多个事务选择同一行，然后基于最初选定的值更新该行时，由于每个事务都不知道其他事务的存在，就会发生丢失更新问题－－最后的更新覆盖了由其他事务所做的更新。例如，两个编辑人员制作了同一文档的电子副本。每个编辑人员独立地更改其副本，然后保存更改后的副本，这样就覆盖了原始文档。最后保存其更改副本的编辑人员覆盖另一个编辑人员所做的更改。如果在一个编辑人员完成并提交事务之前，另一个编辑人员不能访问同一文件，则可避免此问题。</p>
+<h4 id="脏读（Dirty-Reads）"><a href="#脏读（Dirty-Reads）" class="headerlink" title="脏读（Dirty Reads）"></a>脏读（Dirty Reads）</h4><p>一个事务正在对一条记录做修改，在这个事务完成并提交前，这条记录的数据就处于不一致状态；这时，另一个事务也来读取同一条记录，如果不加控制，第二个事务读取了这些“脏”数据，并据此做进一步的处理，就会产生未提交的数据依赖关系。这种现象被形象地叫做”脏读”。(事务中已经进行的修改在未提交前, 其他事务读取到的也只是未更新前的数据,该情况类似于上面的情况)</p>
+<h4 id="不可重复读（Non-Repeatable-Reads）"><a href="#不可重复读（Non-Repeatable-Reads）" class="headerlink" title="不可重复读（Non-Repeatable Reads）"></a>不可重复读（Non-Repeatable Reads）</h4><p>一个事务在读取某些数据后的某个时间，再次读取以前读过的数据，却发现其读出的数据已经发生了改变、或某些记录已经被删除了(这些改变和删除指的是其他操作造成的结果吗?)！这种现象就叫做“不可重复读”。</p>
+<h4 id="幻读（Phantom-Reads）"><a href="#幻读（Phantom-Reads）" class="headerlink" title="幻读（Phantom Reads）"></a>幻读（Phantom Reads）</h4><p>一个事务按相同的查询条件重新读取以前检索过的数据，却发现其他事务插入了满足其查询条件的新数据，这种现象就称为“幻读”。(类似于上述的情况)</p>
+<h2 id="事务的隔离级别"><a href="#事务的隔离级别" class="headerlink" title="事务的隔离级别"></a>事务的隔离级别</h2><hr>
+<p>在上面讲到的并发事务处理带来的问题中，“更新丢失”通常是应该完全避免的。但防止更新丢失，并不能单靠数据库事务控制器来解决，需要应用程序对要更新的数据加必要的锁来解决( 只需要对更新的操作加锁,不需要对读取的操作加锁吗?)，因此，<strong>防止更新丢失应该是应用的责任</strong>。<br>“脏读”、“不可重复读”和“幻读”，其实都是数据库读一致性问题，必须由数据库提供一定的事务隔离机制来解决。数据库实现事务隔离的方式，基本上可分为以下两种。</p>
+<ol>
+<li>在读取数据前，对其加锁，阻止其他事务对数据进行修改。</li>
+<li>另一种是不用加任何锁，通过一定机制生成一个数据请求时间点的一致性数据快照（Snapshot)，并用这个快照来提供一定级别（语句级或事务级）的一致性读取。从用户的角度来看，好像是数据库可以提供同一数据的多个版本，因此，这种技术叫做数据多版本并发控制（MultiVersion Concurrency Control，简称MVCC或MCC），也经常称为多版本数据库。</li>
+</ol>
+<p><em>事务的隔离和事务的并发是矛盾的, 因此需要根据实际的业务需求在隔离和并发之间选择一个合适的节点. 所以mysql提供了4种级别的事务隔离,从而保证充分的灵活性</em></p>
+<p><img src="http://asset.eienao.com/17-5-15/97794292-file_1494817197721_ec1b.png" alt></p>
+<h2 id="行级锁"><a href="#行级锁" class="headerlink" title="行级锁"></a>行级锁</h2><hr>
+<blockquote>
+<ul>
+<li><p>行级锁是Mysql中锁定粒度最细的一种锁。行级锁能大大减少数据库操作的冲突。行级锁分为共享锁和排他锁两种</p>
+</li>
+<li><p><strong>InnoDB行锁是通过给索引上的索引项加锁来实现的。InnoDB这种行锁实现特点意味着：只有通过索引条件检索数据，InnoDB才使用行级锁，否则，InnoDB将使用表锁</strong>！(where条件筛选时的字段必须带有索引才能使用到行级锁。)</p>
+</li>
+<li><p>由于MySQL的行锁是针对索引加的锁，不是针对记录加的锁，所以虽然是访问不同行的记录，但是如果是使用相同的索引键，是会出现锁冲突的。大概意思就是 where id=1 and name=4 和 where id=1 and name=1 虽然查询到的是两条记录,但是 id=1使用的确实同一个索引,因此也会造成阻塞的情况。 一般符合范式,或者使用 主键索引,或者唯一索引来查询出的记录一般不会出现该问题</p>
+</li>
+<li><p>即便在条件中使用了索引字段，但是否使用索引来检索数据是由MySQL通过判断不同执行计划的代价来决定的，如果MySQL认为全表扫描效率更高，比如对一些很小的表，它就不会使用索引，这种情况下InnoDB将使用表锁，而不是行锁。因此，在分析锁冲突时，别忘了<strong>检查SQL的执行计划</strong>，以确认是否真正使用了索引。</p>
+</li>
+</ul>
+</blockquote>
+<h4 id="共享锁"><a href="#共享锁" class="headerlink" title="共享锁"></a>共享锁</h4><p>共享锁又称为读锁,是读取操作创建的锁其他用户可以并发读取数据，但任何事务都不能对数据进行修改（获取数据上的排他锁），直到已释放所有共享锁。 适用场景?<br>用SELECT … IN SHARE MODE获得共享锁，主要用在需要数据依存关系时来确认某行记录是否存在，并确保没有人对这个记录进行UPDATE或者DELETE操作。但是如果当前事务也需要对该记录进行更新操作，则很有可能造成死锁，对于锁定行记录后需要进行更新操作的应用，应该使用SELECT… FOR UPDATE方式获得排他锁。</p>
+<h4 id="排他锁（eXclusive-Lock）"><a href="#排他锁（eXclusive-Lock）" class="headerlink" title="排他锁（eXclusive Lock）"></a>排他锁（eXclusive Lock）</h4><p><strong>解释①</strong> 排他锁又称写锁，如果事务T对数据A加上排他锁后，则其他事务不能再对A加任任何类型的封锁。获准排他锁的事务既能<strong>读</strong>数据，又能<strong>修改</strong>数据。<br><strong>解释②</strong> 允许获得排他锁的事务更新数据，阻止其他事务取得相同数据集的共享读锁和排他写锁。</p>
+<blockquote>
+<p>综述 锁的目标为数据,而非事务</p>
+<h4 id="用法"><a href="#用法" class="headerlink" title="用法"></a>用法</h4><pre><code>SELECT ... FOR UPDATE;
+</code></pre></blockquote>
+<p>在查询语句后面增加FOR UPDATE，Mysql会对查询结果中的每行都加排他锁，当没有其他线程对查询结果集中的<strong>任何一行</strong>使用排他锁时，可以成功申请排他锁，否则会被<strong>阻塞</strong></p>
+<h2 id="关于锁的释放"><a href="#关于锁的释放" class="headerlink" title="关于锁的释放"></a>关于锁的释放</h2><hr>
+<p>innodb的行级锁是针对事务级别的,在 事务commit之后自动释放,不需要手动的解锁. 当然事务回滚也会释放锁</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/algorithm-with-the-fourth-edition-pipe-redirect-peak.html" class="prev">PREV</a><a href="/posts/mac-address-and-ip-address.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/mysql-innodb-row-level-locking-mechanism.html';
+var disqus_title = 'mysql —— InnoDB行级锁机制';
+var disqus_url = 'http://beian.miit.gov.cn/posts/mysql-innodb-row-level-locking-mechanism.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

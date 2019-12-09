@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> mac地址和ip地址 · weiwenhao</title><meta name="description" content="mac地址和ip地址 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">mac地址和ip地址</h1><div class="post-info">2017年4月16日</div><div class="post-content"><a id="more"></a>
+<blockquote>
+<h3 id="关键字"><a href="#关键字" class="headerlink" title="关键字"></a>关键字</h3><p><strong>子网:</strong> 子网掩码相同且子网掩码和ip地址进行与运算后的结果相同,则两个ip地址在同一个子网内.即网络号相同的两个ip地址在同一个子网内<br><strong>网关:</strong> 网关在网络层以上实现网络互连,即不同子网(?局域网?VLAN)之间的网络互连</p>
+</blockquote>
+<hr>
+<h3 id="MAC地址"><a href="#MAC地址" class="headerlink" title="MAC地址"></a>MAC地址</h3><ul>
+<li>网卡的地址，就是数据包的发送地址和接收地址.</li>
+<li>每块网卡出厂的时候，都有一个全世界独一无二的MAC地址，长度是48个二进制位，通常用12个十六进制数表示。计算机之间可以通过MAC地址进行通信</li>
+</ul>
+<p><code>①计算机A需要向计算机B发送数据包,如何得到计算机B的MAC地址呢?</code></p>
+<p>在同一个子网内,计算机之间的通信采用广播的方式. 子网内的计算机检查该数据包中的mac地址是否和自己的相同,相同则接收该数据包,不同则丢弃</p>
+<p>由于整个互联网的规模巨大,如何只采用<strong>广播</strong>的方式发送数据包则会造成巨大的混乱.因此需要判断接收方的mac地址是否和自己在同一个子网内,如何在则直接广播数据包给其接收即可,如果不在同一个子网内,则需要将该数据包通过<strong>网关(gateway)</strong>进行转发,可以理解为每个子网都拥有一个网关</p>
+<p><code>②网关之间如何进行通信,即如何找到目标网关?</code></p>
+<p>因此首要的任务是区分两个MAC地址是否在同一个子网内,<strong>网络地址</strong>(ip地址)也就应运而生,区分的方法就是通过计算机的ip地址和子网掩码(见上述关键字).</p>
+<hr>
+<h3 id="IP地址"><a href="#IP地址" class="headerlink" title="IP地址"></a>IP地址</h3><ul>
+<li>规定网络地址的协议，叫做IP协议。它所定义的地址，就被称为IP地址。</li>
+<li>由32个二进制位组成,我们习惯用4个十进制表示</li>
+</ul>
+<p>ip地址在计算机之间的通信有两个作用</p>
+<ol>
+<li>判断两台计算机是否在用一个子网内</li>
+<li>通过ARP协议得到目标计算的MAC地址</li>
+</ol>
+<p><code>③ 如何得到目标计算机的ip地址?</code></p>
+<hr>
+<h3 id="傻瓜式总结"><a href="#傻瓜式总结" class="headerlink" title="傻瓜式总结"></a>傻瓜式总结</h3><p>上述可以举例为:围裙妈妈喊大头儿子写作业,大头儿子在隔壁老王家玩,于是围裙妈妈去隔壁老王家,再次喊大头儿子回去写作业</p>
+<ul>
+<li>这里围裙妈妈在自己家里喊大头儿子可以理解为子网内的广播的通信方式,这样看来真是粗暴且方便.大头儿子这个称号则可以理解为mac地址</li>
+<li>当无法找到大头儿子时,可以理解为该mac地址和自己不再同一个子网内</li>
+<li>于是去到了隔壁老王家,这里则可以看成是数据包通过网关进行转发,在目标网关的局域网内进行广播自然可以将数据包发送到目标计算机</li>
+</ul>
+<p>MAC地址和ip地址分别属于OSI模型的数据链路层和网络层,对于两台计算机之间通信也是比较重要的部分</p>
+<hr>
+<p><strong>①答</strong><br>通过ARP协议.<br>如果两台主机在同一个子网络，那么我们可以用ARP协议，得到对方的MAC地址。ARP协议也是发出一个数据包（包含在以太网数据包中），其中包含它所要查询主机的IP地址，在对方的MAC地址这一栏，填的是FF:FF:FF:FF:FF:FF，表示这是一个”广播”地址。它所在子网络的每一台主机，都会收到这个数据包，从中取出IP地址，与自身的IP地址进行比较。如果两者相同，都做出回复，向对方报告自己的MAC地址，否则就丢弃这个包。</p>
+<p>? 所以即使在同一个子网内,也必须同时具备ip地址和mac地址才能进行通信</p>
+<p><strong>②答</strong>  </p>
+<ul>
+<li>首先‘网关’一个大概念，不具体特指一类产品，只要连接两个不同的网络的设备都可以叫网关.</li>
+<li>路由器可以连接两个不同的子网,因此其充当了网关的功能,网关之间如何通信则可以映射为路由器之间的通信</li>
+<li>路由器的通信则通过路由协议来完成,如 距离向量路由协议,链路状态路由协议等</li>
+</ul>
+<p><strong>③答</strong>  </p>
+<ol>
+<li>DNS协议, 通过一个已知ip地址的(如谷歌的 8.8.8.8)中间dns服务器将域名(如:www.google.com)装换为ip地址</li>
+<li>问对方</li>
+</ol>
+<hr>
+<p>参考文章 : <a href="http://www.ruanyifeng.com/blog/2012/05/internet_protocol_suite_part_i.html" target="_blank" rel="noopener">互联网协议入门（一）</a>  很不错的文章,推荐阅读!</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/mysql-innodb-row-level-locking-mechanism.html" class="prev">PREV</a><a href="/posts/mysql-foreign-keys.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/mac-address-and-ip-address.html';
+var disqus_title = 'mac地址和ip地址';
+var disqus_url = 'http://beian.miit.gov.cn/posts/mac-address-and-ip-address.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

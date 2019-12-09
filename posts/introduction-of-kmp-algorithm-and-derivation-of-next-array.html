@@ -1,0 +1,73 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> kmp 算法简介及 next 数组推导 · weiwenhao</title><meta name="description" content="kmp 算法简介及 next 数组推导 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">kmp 算法简介及 next 数组推导</h1><div class="post-info">2018年5月1日</div><div class="post-content"><p>Knuth-Morris-Pratt字符串查找算法（简称为KMP算法）可在一个主文本字符串S内查找一个词W的出现位置。此算法通过运用对这个词在<strong>不匹配时本身就包含足够的信息</strong>来确定<strong>下一个匹配</strong>将在哪里开始的发现，从而避免重新检查先前匹配的字符。</p>
+<a id="more"></a>
+<p>比如下面这种情况<br><img src="http://asset.eienao.com/15250626677035.jpg" alt></p>
+<p><img src="http://asset.eienao.com/15250673175700.gif" alt></p>
+<p>gif中可以看出，匹配失败之后kmp算法不对主字符串的指针进行任何的回退，其关心的是对搜索词指针的处理。</p>
+<p>细心的你可能已经感受到了一点，上面的处理是抽象的（通用的），既完全不需要知道主字符串具体是多少的情况下进行的模拟演习。</p>
+<p>gif中模拟了指针k在字符c处失配的情况，通过这样一个预处理，在实际匹配中，如果遇到了这种情况，我们只需要从容的将搜索词指针移动到E处，然后继续匹配即可。</p>
+<blockquote>
+<p>补充一下，为什么搜索词在移动到 K = E的位置停了下来？<br>这里可以感性的理解，由于在移动过程中 AB成功进行了匹配，而在不知道 ‘?’所代表的具体字符是多少的情况下继续向前移动搜索词，则可能会出现错失匹配的情况。</p>
+</blockquote>
+<p>现在依旧已<strong>ABEABC</strong>作为搜索词，再看几种演习情况</p>
+<p><img src="http://asset.eienao.com/15250699691851.jpg" alt></p>
+<p><img src="http://asset.eienao.com/15250697769552.jpg" alt><br><img src="http://asset.eienao.com/15250698346450.jpg" alt><br><img src="http://asset.eienao.com/15250698836098.jpg" alt></p>
+<p>我们来总结一下规律。<br>对于前两种情况K指针都没有移动到起点0，而是中途位置停了下来。<br>可以发现 ABEAB?与ABEABC在失配字符之前的字符<strong>ABEAB</strong> 的头部与尾部存在相同的字符<strong>AB</strong>。</p>
+<p>ABEA?和ABEAB在失配之前的字符<strong>ABEA</strong>中，头部和尾部存在相同的字符 <strong>A</strong>。</p>
+<p><img src="http://asset.eienao.com/15250705065666.jpg" alt><br>对于这种字符我们称之为前后缀，通过上面的图我们发现<strong>K指针在失配时移动到的位置刚好是前缀的后一个字符</strong>。但一个字符串的前缀并不是唯一的，所以这句话非常不严谨。</p>
+<blockquote>
+<p>首先，要了解两个概念：”前缀”和”后缀”。 “前缀”指除了最后一个字符以外，一个字符串的全部头部组合；”后缀”指除了第一个字符以外，一个字符串的全部尾部组合。<br><img src="http://asset.eienao.com/15250708572240.jpg" alt><br>出自 阮一峰 <a href="http://www.ruanyifeng.com/blog/2013/05/Knuth%E2%80%93Morris%E2%80%93Pratt_algorithm.html" target="_blank" rel="noopener">字符串匹配的KMP算法</a></p>
+</blockquote>
+<p>了解了前缀与后缀之后，我们再次定义。<br>当指针j所指向的字符与指针k所指向的字符失配时，失配之前的字符存在一个前缀集合和一个后缀集合，我们可以得到 </p>
+<p><code>k&#39; = max(0 ~ k-1的前缀集合 ∩ 0 ~ k-1的后缀集合后缀集合)</code></p>
+<p>k’的含义从公式中看的很清楚（前缀与后缀的交集的最大值）。而另一层含义则是，如果搜索词下标从0开始计算，当k处失配时，我们只需要将k移动到k’处继续匹配即可。</p>
+<p>kmp算法的通常把计算出的k’放到next数组中存储<br><strong>next[k] = k’</strong>。当我们实战中在指针k处失配时,我们只需要将k指针回退到k’处，既k = k’ = next[k]即可。</p>
+<p>确实如我们之前所言，通过定义可以清楚的认识到，计算next数组完全不需要主字符串参与，完全是搜索词自匹配计算<code>k&#39; = max(0~k-1的前缀集合 ∩ 0~k-1的后缀集合)</code>的过程。</p>
+<p>这个定义虽然很严谨，便于理解，但却不能很好的使用计算机语言描述出来。下面看看便于计算机理解的next数组的推导过程。这应该是整个kmp算法最难理解的地方</p>
+<h2 id="next数组推导"><a href="#next数组推导" class="headerlink" title="next数组推导"></a>next数组推导</h2><p>根据next数组的定义,我们可以有</p>
+<p>若 <code>next[j] = k</code>，则 <code>w[0 ~ k-1] = w[j-k ~ j-1]</code></p>
+<p>要明白这两者之间是充分必要条件关系，既<br>若 <code>w[0 ~ k-1] = w[j-k ~ j-1]</code>则<code>next[j] = k</code></p>
+<p>下图图中的情况为一种满足定义的情况<code>next[6] = 2</code><br><img src="http://asset.eienao.com/15251567062585.jpg" alt></p>
+<blockquote>
+<p>这个我不知道怎么证明，因为这是由next数组的定义得到的，所以也不需要证明。</p>
+</blockquote>
+<p>现在已经知道了<code>next[j] = k</code>，顺理成章，接下来我们继续求<code>next[j+1]</code>，<code>next[j+1]</code>求解过程中存在两种情况</p>
+<h3 id="w-k-w-j"><a href="#w-k-w-j" class="headerlink" title="w[k] == w[j]"></a>w[k] == w[j]</h3><p>根据上面的推导，当 <code>w[k] == w[j]</code>时，有<code>w[0 ~ k] = w[j-k ~ j]</code>， 则可以得到 <code>next[j+1] = k + 1</code><br><img src="http://asset.eienao.com/15251568780076.jpg" alt></p>
+<h3 id="w-k-w-j-1"><a href="#w-k-w-j-1" class="headerlink" title="w[k] != w[j]"></a>w[k] != w[j]</h3><p>若<code>w[k] != w[j]</code>则进入了熟悉的字符串失配环节，明确一下，谁与谁的比较中产生了失配？下图是一个符合我们讨论的例子</p>
+<p><img src="http://asset.eienao.com/15251569142399.jpg" alt></p>
+<p>可以看出在寻找字符串<strong>ABEFABA</strong>的最大前后缀交集时，<strong>k</strong>与<strong>j</strong>发生了失配</p>
+<p><img src="http://asset.eienao.com/15251570164284.jpg" alt></p>
+<p>在kmp算法中如果发生了这种情况，则另 <code>k = next[k]</code>，然后再次让w[k]与w[j]比较。那么问题来了</p>
+<ol>
+<li><p>为什么当<code>w[k] != w[j]</code>时,令 <code>k = next[k]</code>, 而不是k = k-1或者其他呢?</p>
+<p> w[k]与w[j]失配时， k至少要移动到next[k]处才能使得<strong>k</strong>与主字符串的<strong>j</strong>继续匹配。这是next数组的定义，现在只不过在使用这个定义而已</p>
+</li>
+<li><p><code>w[k] != w[j]</code>，所以另<code>k&#39; = next[k]</code>，假如此时<code>w[k&#39;] == w[j]</code>，如何证明 <code>w[0 ~ k&#39;] == w[j-k&#39; ~ j]</code> 呢?(图中粉色部分)</p>
+<p> <img src="http://asset.eienao.com/15251572646346.jpg" alt><br> 由<code>k&#39; = next[k]</code>得到<code>w[0 ~ k&#39;-1] == w[k-k&#39; ~ k-1]</code></p>
+<p> 由<code>next[j] = k</code>得到<code>w[0 ~ k-1] == w[j-k ~ j-1]</code></p>
+<p> 因为 <code>w[0 ~ k-1] == w[j-k ~ j-1]</code><br> 所以 <code>w[k-k&#39; ~ k-1] == w[j-k&#39; ~ j-1]</code></p>
+<blockquote>
+<p>这里属于感性证明，能力不足暂时无法使用公式证明</p>
+</blockquote>
+<p> 所以 <code>w[0 ~ k&#39;-1] == w[j-k&#39; ~ j-1]</code> </p>
+<p> 又因为 <code>w[k&#39;] == w[j]</code><br> 所以 <code>w[0 ~ k&#39;] == w[j-k&#39; ~ j]</code></p>
+<p> 由 <code>w[0 ~ k&#39;] == w[j-k&#39; ~ j]</code>，得到 next[j+1] = k’ + 1</p>
+<p> 这是假如此时 <code>w[k&#39;] == w[j]</code>的情况，但大多数情况是<code>w[k&#39;] != w[j]</code>的，这种情况我们在算法实现中讨论。</p>
+</li>
+</ol>
+<h2 id="算法实现"><a href="#算法实现" class="headerlink" title="算法实现"></a>算法实现</h2><p>next数组实现</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="function"><span class="keyword">function</span> <span class="title">getNext</span><span class="params">($word)</span>: <span class="title">array</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    $next = [<span class="number">-1</span>];</span><br><span class="line">    $len = strlen($word);</span><br><span class="line">    $k = <span class="number">-1</span>;</span><br><span class="line">    $j = <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">while</span> ($j &lt; $len - <span class="number">1</span>) &#123;</span><br><span class="line">        <span class="keyword">if</span> ($k == <span class="number">-1</span> || $word[$j] == $word[$k]) &#123;</span><br><span class="line">            $next[++$j] = ++$k;</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            $k = $next[$k];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> $next;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>next[0] = -1</code> 中-1是一种特殊标志，方便进行判断。在上面的<code>w[k] != w[j]</code>时，我们另 <code>k = next[k]</code>然后再去判断w[k]是否等于w[j]，如果还是不相等，则再另<code>k = next[k]</code>像这样一直循环下去。<br>但是循环总归有个尽头，在尽头会出现这种情况，此时k = 0，<code>w[k] != w[j]</code>，按照算法<code>k = next[0] = -1</code>。</p>
+<p>因此当我们看到 k = -1时，我们就能够知道 w[0 ~ k]不存在前缀与后缀的交集，既 <code>max(0~k的前缀集合 ∩ 0~k的后缀集合) = 0</code> 所以我们另 <code>next[k+1] = 0</code>即可</p>
+<p>上面的算法为了保持简洁性，令特殊值为-1，使得一个if，else可以覆盖三种情况，当然你用下面的写法也是一个意思</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>($k == <span class="number">-1</span>) &#123;</span><br><span class="line">    $next[++$j] = <span class="number">0</span>;</span><br><span class="line">&#125; <span class="keyword">elseif</span> ($word[$j] == $word[$k]) &#123;</span><br><span class="line">    $next[++$j] = ++$k;</span><br><span class="line">&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">    $k = $next[$k];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><strong>详细实现含测试用例</strong><br><a href="https://github.com/weiwenhao/algorithm/blob/master/src/KMP.php" target="_blank" rel="noopener">https://github.com/weiwenhao/algorithm/blob/master/src/KMP.php</a></p>
+<h2 id="结"><a href="#结" class="headerlink" title="结"></a>结</h2><p>kmp算法实际上在字符串匹配中使用的情况并不多，虽然其时间复杂度是O(m+n)，但实际上其表现跟朴素算法并不会差太多，在学习的过程中其实也应该发现了，能够部分匹配的情况其实不多见。<br>不得不说kmp算法非常的难以理解，细节太多很容易陷入一个拆东墙补西墙的情况，各种牛角尖钻到停不下来。但是其状态机的思想，以及next数组的推导过程却非常值得学习。</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/process-abstract-solution-general-equation.html" class="prev">PREV</a><a href="/posts/amazing-tree-two-fork-lookup-tree.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/introduction-of-kmp-algorithm-and-derivation-of-next-array.html';
+var disqus_title = 'kmp 算法简介及 next 数组推导';
+var disqus_url = 'http://beian.miit.gov.cn/posts/introduction-of-kmp-algorithm-and-derivation-of-next-array.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>

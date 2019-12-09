@@ -1,0 +1,41 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 线程与协程 · weiwenhao</title><meta name="description" content="线程与协程 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">线程与协程</h1><div class="post-info">2017年10月24日</div><div class="post-content"><a id="more"></a>
+<h3 id="多线程模型"><a href="#多线程模型" class="headerlink" title="多线程模型"></a>多线程模型</h3><p>多线程模型中<strong>内核</strong>实现线程与线程之间的调度，通常一个线程是无法从头到尾占用着cpu的，尤其是进行i/o操作时，许多的系统调用都是阻塞的，此时内核保存该线程的上下文，然后挂起该线程。当然更多时候是由于该线程的本次运行时间耗尽，只得被挂起等待cpu的下一次临幸</p>
+<p>但是多线程存在两个问题，在线程数量过多时，问题被放大的尤为明显</p>
+<ul>
+<li>线程的上下文切换造成的开销。    </li>
+<li>线程之间对资源的竞争问题。</li>
+</ul>
+<h3 id="上下文切换"><a href="#上下文切换" class="headerlink" title="上下文切换"></a>上下文切换</h3><p>上下文切换可以认为是内核（操作系统的核心）在 CPU 上对于进程（包括线程）进行以下的活动：</p>
+<ol>
+<li>挂起一个进程，将这个进程在 CPU 中的状态（上下文）存储于内存中的某处，</li>
+<li>在内存中检索下一个进程的上下文并将其在 CPU 的寄存器中恢复</li>
+<li>跳转到程序计数器所指向的位置（即跳转到进程被中断时的代码行），以恢复该进程。</li>
+</ol>
+<p>这里的切换有一个时间片的概念</p>
+<p>时间片即CPU分配给各个程序的时间，每个线程被分配一个时间段，称作它的时间片，即该进程允许运行的时间，使各个程序从表面上看是同时进行的。如果在时间片结束时进程还在运行，则CPU将被剥夺并分配给另一个进程。如果进程在时间片结束前阻塞或结束，则CPU当即进行切换。而不会造成CPU资源浪费。在宏观上：我们可以同时打开多个应用程序，每个程序并行不悖，同时运行。但在微观上：由于只有一个CPU，一次只能处理程序要求的一部分，如何处理<strong>公平</strong>，一种方法就是引入时间片，每个程序轮流执行。</p>
+<blockquote>
+<p>在函数调用的时候就已经确定该函数是否会造成阻塞</p>
+</blockquote>
+<p>在I/O密集型运算中，尤其是高并发时。为了保证公平，时间片的分配会越来越小，切换越发频繁。资源也就被浪费在了上下文切换中</p>
+<p>而cpu密集型运算中，不需要频繁的切换线程，所以多线程是一个不错的选择</p>
+<h3 id="协程"><a href="#协程" class="headerlink" title="协程"></a>协程</h3><p>为了解决I/O密集型运算内核在资源调度上的缺陷，所以引入了协程（coroutine）的概念。协程也被称为用户态的线程，内核态的线程调度由内核来完成。而用户态的线程的调度则交给用户来完成，也就是应用程序，也就是我们自己，因此我们可以实现自己的调度算法。更重要的是，即使我们有成千上万的线程，也不用担心线程切换浪费的资源问题了。</p>
+<p>上面我们看到要实现线程的调度的关键就是上下文状态的保存。php中，我们通过 <code>Generator</code>对象来实现程序的中断与恢复。<code>Generator</code> 对象在程序中断时会为我们保存中断前的现场。只要有这一点，我们的应用程序就可以自己实现协程了。这里Generator如何保存上下文环境，是否像线程切换一样浪费资源还需要近一步了解。</p>
+<p>我们可以用协程实现一个支持高并发的web服务器，如图</p>
+<p><img src="http://asset.eienao.com/17-10-24/25490956.jpg" alt></p>
+<p>我们将在单个进程中同时处理这些并发的请求，从http请求开始接手，一点一点推进，直到response。图中的每一个线程其实就是我们所说的协程，我们要做的就是实现一个调度器，来分配上面每一个线程的运行时间。</p>
+<p>具体的实现就参见 鸟哥翻译的这篇文章 <a href="http://www.laruence.com/2015/05/28/3038.html" target="_blank" rel="noopener">在PHP中使用协程实现多任务调度</a></p>
+<p>读完文章我依旧有两个问题</p>
+<ul>
+<li>系统调用一定要使用非阻塞版本，否则会把控制权交还给内核，然后阻塞整个进程，有解决办法吗？</li>
+<li>对mysql的操作是否属于I/O操作，是否会造成阻塞？</li>
+</ul>
+<p>啰嗦一下nginx采用的是异步I/O模型来实现I/O，另外一个说法是，协程解决了异步I/O噩梦般的回调。另外读完鸟哥的那篇文章然后跟着敲了一下代码发现好像并没有什么卵用~</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/python-yield-from.html" class="prev">PREV</a><a href="/posts/use-php-to-achieve-a-multi-process-ideas.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/thread-and-collaboration.html';
+var disqus_title = '线程与协程';
+var disqus_url = 'http://beian.miit.gov.cn/posts/thread-and-collaboration.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2019 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>
