@@ -2,14 +2,56 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://beian.miit.gov.cn/posts/python-yield-from.html</loc>
+    <loc>http://beian.miit.gov.cn/posts/%E7%BC%96%E5%86%99%E5%85%B7%E6%9C%89%E6%8F%8F%E8%BF%B0%E6%80%A7%E7%9A%84%20RESTful%20API%20(%E4%BA%8C):%20%E6%8E%A8%E8%8D%90%E4%B8%8E%20Observer.html</loc>
+    
+    <lastmod>2020-09-01T03:44:20.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/%E7%BC%96%E5%86%99%E5%85%B7%E6%9C%89%E6%8F%8F%E8%BF%B0%E6%80%A7%E7%9A%84%20RESTful%20API%20(%E4%B8%89):%20%E7%94%A8%E6%88%B7%E8%A1%8C%E4%B8%BA.html</loc>
+    
+    <lastmod>2020-09-01T03:44:12.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/%E7%BC%96%E5%86%99%E5%85%B7%E6%9C%89%E6%8F%8F%E8%BF%B0%E6%80%A7%E7%9A%84%20RESTful%20API%20(%E5%9B%9B):%20%E9%80%9A%E7%9F%A5%E7%B3%BB%E7%BB%9F.html</loc>
+    
+    <lastmod>2020-09-01T03:44:04.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/%E7%BC%96%E5%86%99%E5%85%B7%E6%9C%89%E6%8F%8F%E8%BF%B0%E6%80%A7%E7%9A%84%20RESTful%20API%20(%E4%B8%80):%20Workflow.html</loc>
+    
+    <lastmod>2020-09-01T03:43:58.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/%E7%A7%92%E6%9D%80%E7%B3%BB%E7%BB%9F%E7%9A%84%E8%AE%BE%E8%AE%A1.html</loc>
+    
+    <lastmod>2020-09-01T03:42:58.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/orm%E9%99%B7%E9%98%B1.html</loc>
+    
+    <lastmod>2020-09-01T03:37:09.000Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>http://beian.miit.gov.cn/posts/a-brief-introduction-to-the-realization-of-container-reflection-mechanism.html</loc>
     
     <lastmod>2019-12-09T04:32:11.000Z</lastmod>
     
   </url>
   
   <url>
-    <loc>http://beian.miit.gov.cn/posts/a-brief-introduction-to-the-realization-of-container-reflection-mechanism.html</loc>
+    <loc>http://beian.miit.gov.cn/posts/a-deep-understanding-of-the-tcp-protocol-1.html</loc>
     
     <lastmod>2019-12-09T04:32:11.000Z</lastmod>
     
@@ -93,7 +135,7 @@
   </url>
   
   <url>
-    <loc>http://beian.miit.gov.cn/posts/a-deep-understanding-of-the-tcp-protocol-1.html</loc>
+    <loc>http://beian.miit.gov.cn/posts/python-yield-from.html</loc>
     
     <lastmod>2019-12-09T04:32:11.000Z</lastmod>
     

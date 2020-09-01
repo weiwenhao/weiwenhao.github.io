@@ -1,0 +1,122 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> ORM 陷阱 · weiwenhao</title><meta name="description" content="ORM 陷阱 - 粤ICP备18153286"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.ico"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="http://beian.miit.gov.cn/atom.xml" title="weiwenhao"></head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/logo.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/weiwenhao" target="_blank" class="nav-list-link">GITHUB</a></li><li class="nav-list-item"><a href="/atom.xml" target="_self" class="nav-list-link">RSS</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">ORM 陷阱</h1><div class="post-info">2019年3月1日</div><div class="post-content"><p>产品实现中有一类常见的需求是,取出一组数据, 且这组数据中的每一项都携带固定数量的关联数据.</p>
+<p>如取出一组热门作者及他们最近发表的3篇文章</p>
+<p><img src="https://cdn.learnku.com/uploads/images/201903/01/10960/7pD3giMAlh.png!large" alt></p>
+<p>但在MySQL(ORM)中这种需求并不能比较完美的实现.</p>
+<p>你看到这种需求的第一眼可能会想到这么写</p>
+<blockquote>
+<p>users: id</p>
+<p>posts: id,user_id</p>
+<p>user 通过外键<strong>user_id</strong> <strong>一对多</strong>关联 post</p>
+</blockquote>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$users = \App\Models\User::with([<span class="string">'posts'</span> =&gt; <span class="function"><span class="keyword">function</span> <span class="params">($query)</span> </span>&#123;</span><br><span class="line">    $query-&gt;limit(<span class="number">3</span>);</span><br><span class="line">&#125;])-&gt;limit(<span class="number">10</span>)-&gt;get();</span><br></pre></td></tr></table></figure>
+<p>但这并不能满足该需求,并且<strong>这是一种错误的写法.</strong> 这里的期望是10个作者,每个作者取出3篇帖子,一共取出了30篇帖子,实际生成的sql语句是</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">select</span></span><br><span class="line">  *</span><br><span class="line"><span class="keyword">from</span></span><br><span class="line">  <span class="string">`posts`</span></span><br><span class="line"><span class="keyword">where</span></span><br><span class="line">  <span class="string">`posts`</span>.<span class="string">`user_id`</span> <span class="keyword">in</span> (<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">10</span>)</span><br><span class="line"><span class="keyword">limit</span></span><br><span class="line">  <span class="number">3</span></span><br></pre></td></tr></table></figure>
+<p>你应该一眼就看出了不可行的原因.虽然知道了这样不可行,但是仔细去想却发现,自己也想不出不出满足这个需求的sql语句,mysql并没有类似each_limit的语法.</p>
+<blockquote>
+<p>sql大佬请忽略我这句话!!</p>
+</blockquote>
+<p>问题与陷阱应该阐述的比较清楚了,接下来看看几个可行的解决方案</p>
+<h2 id="PLAN-A"><a href="#PLAN-A" class="headerlink" title="PLAN A"></a>PLAN A</h2><p>使用 N + 1的sql查询方案.  </p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">$users = \App\Models\User::limit(<span class="number">10</span>)-&gt;get();</span><br><span class="line"></span><br><span class="line">$users = $users-&gt;map(<span class="function"><span class="keyword">function</span> <span class="params">($user)</span> </span>&#123;</span><br><span class="line">    <span class="comment">//可以考虑$user-&gt;id缓存,在保证了速度的同时避免大面积的缓存重建</span></span><br><span class="line">    $user-&gt;posts = $user-&gt;posts()-&gt;limit(<span class="number">3</span>)-&gt;get();</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">return</span> $user;</span><br><span class="line">&#125;);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> $users;</span><br></pre></td></tr></table></figure>
+<p>这种做法的一个好处是思路足够简单直白,没有复杂sql.在缓存的加持下可以避免N+1问题.</p>
+<h2 id="PLAN-B"><a href="#PLAN-B" class="headerlink" title="PLAN B"></a>PLAN B</h2><p>对PLAN A稍微修改一下就构成PLAN B, 既UNION ALL解决方案. 通过mysql的UNION ALL将上面需要进行的10次查询联合成一次查询.</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">$users = \App\Models\User::limit(<span class="number">10</span>)-&gt;get();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 拼接 union all</span></span><br><span class="line">$posts = $users-&gt;map(<span class="function"><span class="keyword">function</span> <span class="params">($user)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> $user-&gt;posts()-&gt;limit(<span class="number">3</span>);</span><br><span class="line"></span><br><span class="line">&#125;)-&gt;reduce(<span class="function"><span class="keyword">function</span> <span class="params">($carry, $query)</span> </span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">return</span> $carry ? $carry-&gt;unionAll($query) : $query;</span><br><span class="line"></span><br><span class="line">&#125;)-&gt;get();</span><br><span class="line"></span><br><span class="line"><span class="comment">// 将posts按照一对多的关系relation到users中</span></span><br><span class="line">$relation = \App\Models\User::query()-&gt;getRelation(<span class="string">'posts'</span>);</span><br><span class="line">$relation-&gt;match(</span><br><span class="line">    $relation-&gt;initRelation($users-&gt;all(), <span class="string">'posts'</span>),</span><br><span class="line">    $posts, <span class="string">'posts'</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> $users;</span><br></pre></td></tr></table></figure>
+<p>sql如下</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">(</span><br><span class="line">  <span class="keyword">select</span></span><br><span class="line">    *</span><br><span class="line">  <span class="keyword">from</span></span><br><span class="line">    <span class="string">`posts`</span></span><br><span class="line">  <span class="keyword">where</span></span><br><span class="line">    <span class="string">`user_id`</span> = <span class="number">355</span></span><br><span class="line">  <span class="keyword">limit</span></span><br><span class="line">    <span class="number">3</span></span><br><span class="line">)</span><br><span class="line"><span class="keyword">union</span> all</span><br><span class="line">  (</span><br><span class="line">    <span class="keyword">select</span></span><br><span class="line">      *</span><br><span class="line">    <span class="keyword">from</span></span><br><span class="line">      <span class="string">`posts`</span></span><br><span class="line">    <span class="keyword">where</span></span><br><span class="line">      <span class="string">`user_id`</span> = <span class="number">234</span></span><br><span class="line">    <span class="keyword">limit</span></span><br><span class="line">      <span class="number">3</span></span><br><span class="line">  )</span><br><span class="line"><span class="keyword">union</span> all</span><br><span class="line">  (</span><br><span class="line">    <span class="keyword">select</span></span><br><span class="line">      *</span><br><span class="line">    <span class="keyword">from</span></span><br><span class="line">      <span class="string">`posts`</span></span><br><span class="line">    <span class="keyword">where</span></span><br><span class="line">      <span class="string">`user_id`</span> = <span class="number">232</span></span><br><span class="line">    <span class="keyword">limit</span></span><br><span class="line">      <span class="number">3</span></span><br><span class="line">  )</span><br><span class="line">...</span><br></pre></td></tr></table></figure>
+<p>上面的查询有效的避免了PHP与MySQL之间的I/O耗时,并且UNION ALL可以有效的利用索引.</p>
+<p>在50w条posts数据时,查询平均耗时 0.002s,算是不错的表现了. Explain如下</p>
+<p><img src="https://cdn.learnku.com/uploads/images/201903/01/10960/Vk4RefITFr.png!large" alt></p>
+<h2 id="PLAN-C"><a href="#PLAN-C" class="headerlink" title="PLAN C"></a>PLAN C</h2><p>合理利用MySQL中的变量语法我们也可以实现这个需求,只需要用一个变量帮我们编码一下即可</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">SELECT</span></span><br><span class="line">	posts.*,</span><br><span class="line">	@<span class="built_in">number</span> := <span class="keyword">IF</span> (@current_user_id = <span class="string">`user_id`</span>, @<span class="built_in">number</span> + <span class="number">1</span>, <span class="number">1</span>) <span class="keyword">AS</span> <span class="built_in">number</span>,</span><br><span class="line">	@current_user_id := <span class="string">`user_id`</span></span><br><span class="line"><span class="keyword">FROM</span></span><br><span class="line">	(<span class="keyword">select</span> * <span class="keyword">from</span> <span class="string">`posts`</span> <span class="keyword">where</span> <span class="string">`posts`</span>.<span class="string">`user_id`</span> <span class="keyword">IN</span> (<span class="number">572</span>, <span class="number">822</span>, <span class="number">911</span>, <span class="number">103</span>, <span class="number">234</span>, <span class="number">11</span>, <span class="number">999</span>, <span class="number">333</span>, <span class="number">121</span>, <span class="number">122</span>) <span class="keyword">order</span> <span class="keyword">by</span> <span class="string">`posts`</span>.<span class="string">`user_id`</span> <span class="keyword">ASC</span>) <span class="keyword">AS</span> posts</span><br><span class="line"><span class="keyword">HAVING</span></span><br><span class="line">	<span class="built_in">number</span> &lt;= <span class="number">3</span></span><br></pre></td></tr></table></figure>
+<p>简单解析一下这个sql语句.  </p>
+<p>FORM 为一个子查询,初步筛选出我们需要的作者的所有文章, 且<strong>正序排列</strong>后生成一个临时表.</p>
+<p>SELECT 为上面临时表添加标号,添加的方式如下. (你需要从上往下一行行一行的观察,与select的执行方式一致即可)</p>
+<blockquote>
+<p>MySQL中调用未定义的变量,其值默认为null.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">id</th>
+<th style="text-align:center">user_id</th>
+<th style="text-align:center">@current_user_id</th>
+<th style="text-align:center">if判断</th>
+<th style="text-align:center">@number</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">null</td>
+<td style="text-align:center">false, number被赋值为1</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">true, @number = @number + 1</td>
+<td style="text-align:center">2</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">true, @number = @number + 1</td>
+<td style="text-align:center">3</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">true, @number = @number + 1</td>
+<td style="text-align:center">4</td>
+</tr>
+<tr>
+<td style="text-align:center">5</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">false, number被赋值为1</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">6</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">2</td>
+<td style="text-align:center">true, @number = @number + 1</td>
+<td style="text-align:center">2</td>
+</tr>
+<tr>
+<td style="text-align:center">..</td>
+<td style="text-align:center">..</td>
+<td style="text-align:center">..</td>
+<td style="text-align:center">..</td>
+<td style="text-align:center">..</td>
+</tr>
+</tbody>
+</table>
+<p>HAVING执行于SELECT之后,其再次筛选上面的临时表,只取number &lt;= 3的 行.</p>
+<p>在执行效率方面,50万posts数据时,查询平均耗时在 0.112s,不算太差,也不算太好的一个表现. Explain如下</p>
+<p><img src="https://cdn.learnku.com/uploads/images/201903/01/10960/ckcVQC5M4X.png!large" alt></p>
+<p>通过sql语句我们也可以预见. <strong>from子查询的结果集的数量,会直接影响后面标号的效率.</strong> 在子查询的结果集不多时,该查询会有更好的表现.</p>
+<p>PLAN C有一个额外的好处是,其有不错的laravel扩展支持,能够在不影响原有ORM操作的情况下实现该需求</p>
+<blockquote>
+<p><a href="https://github.com/staudenmeir/eloquent-eager-limit" target="_blank" rel="noopener">staudenmeir/eloquent-eager-limit</a></p>
+</blockquote>
+<h2 id="PLAN-D"><a href="#PLAN-D" class="headerlink" title="PLAN D"></a>PLAN D</h2><p>我们也可以添加一张中间表来维持这种关联关系,比如作者与其最新发表的文章部分.我们可以创建一张</p>
+<p><code>user_latest_post:user_id,post_id</code>,  然后在User模型中添加一条多对多的关联关系</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># User.php</span></span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="function"><span class="keyword">function</span> <span class="title">latestPosts</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">    <span class="keyword">return</span> <span class="keyword">$this</span>-&gt;belongsToMany(Post::class, <span class="string">'user_latest_post'</span>)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>使用</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$users = \App\Models\User::with([<span class="string">'latestPosts'</span>])-&gt;limit(<span class="number">10</span>)-&gt;get();</span><br></pre></td></tr></table></figure>
+<p>该方案更加的符合ORM的关联关系模型,查询的效率上也较高. 但是需要增加对<code>user_latest_post</code>表的维护成本</p>
+<h2 id><a href="#" class="headerlink" title="#"></a>#</h2><p>总结来说上面四种方案都还算不错,每种都有自己的优势,可以根据自己的情况选择合适的方案. 当然如果你有其他的解决方案,欢迎留言~</p>
+</div></article></div></main><footer><div class="paginator"><a href="/posts/编写具有描述性的 RESTful API (一): Workflow.html" class="prev">PREV</a><a href="/posts/programmer-keyboard-usage-guide.html" class="next">NEXT</a></div><div id="disqus_thread"></div><script>var disqus_shortname = 'maxwei';
+var disqus_identifier = 'posts/orm陷阱.html';
+var disqus_title = 'ORM 陷阱';
+var disqus_url = 'http://beian.miit.gov.cn/posts/orm陷阱.html';
+(function() {
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();</script><script id="dsq-count-scr" src="//maxwei.disqus.com/count.js" async></script><div class="copyright"><p>© 2017 - 2020 <a href="http://beian.miit.gov.cn">粤ICP备18153286</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script><script>(function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;e=o.createElement(i);r=o.getElementsByTagName(i)[0];e.src='//www.google-analytics.com/analytics.js';r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));ga('create',"UA-113144905-1",'auto');ga('send','pageview');</script></body></html>
